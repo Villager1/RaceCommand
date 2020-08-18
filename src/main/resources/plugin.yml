@@ -1,0 +1,5 @@
+name: RaceCommand
+main: io.github.hielkeminecraft.racecommand.Main
+version: 1.0.0
+author: Hielke
+api-version: 1.16
