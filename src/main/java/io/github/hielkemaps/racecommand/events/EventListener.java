@@ -1,7 +1,7 @@
-package io.github.hielkeminecraft.racecommand.events;
+package io.github.hielkemaps.racecommand.events;
 
-import io.github.hielkeminecraft.racecommand.race.Race;
-import io.github.hielkeminecraft.racecommand.race.RaceManager;
+import io.github.hielkemaps.racecommand.race.RaceManager;
+import io.github.hielkemaps.racecommand.race.Race;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;

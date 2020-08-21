@@ -1,14 +1,13 @@
-package io.github.hielkeminecraft.racecommand;
+package io.github.hielkemaps.racecommand;
 
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
-import dev.jorel.commandapi.arguments.IntegerArgument;
 import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.arguments.PlayerArgument;
-import io.github.hielkeminecraft.racecommand.race.Race;
-import io.github.hielkeminecraft.racecommand.race.RaceManager;
-import io.github.hielkeminecraft.racecommand.wrapper.PlayerManager;
-import io.github.hielkeminecraft.racecommand.wrapper.PlayerWrapper;
+import io.github.hielkemaps.racecommand.race.RaceManager;
+import io.github.hielkemaps.racecommand.wrapper.PlayerManager;
+import io.github.hielkemaps.racecommand.race.Race;
+import io.github.hielkemaps.racecommand.wrapper.PlayerWrapper;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;

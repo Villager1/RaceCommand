@@ -1,7 +1,6 @@
-package io.github.hielkeminecraft.racecommand;
+package io.github.hielkemaps.racecommand;
 
-import io.github.hielkeminecraft.racecommand.events.EventListener;
-import org.bukkit.Bukkit;
+import io.github.hielkemaps.racecommand.events.EventListener;
 import org.bukkit.ChatColor;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;

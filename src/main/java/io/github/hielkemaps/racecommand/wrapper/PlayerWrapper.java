@@ -1,4 +1,4 @@
-package io.github.hielkeminecraft.racecommand.wrapper;
+package io.github.hielkemaps.racecommand.wrapper;
 
 import org.bukkit.entity.Player;
 

@@ -1,8 +1,8 @@
-package io.github.hielkeminecraft.racecommand.race;
+package io.github.hielkemaps.racecommand.race;
 
-import io.github.hielkeminecraft.racecommand.Main;
-import io.github.hielkeminecraft.racecommand.wrapper.PlayerManager;
-import io.github.hielkeminecraft.racecommand.wrapper.PlayerWrapper;
+import io.github.hielkemaps.racecommand.Main;
+import io.github.hielkemaps.racecommand.wrapper.PlayerManager;
+import io.github.hielkemaps.racecommand.wrapper.PlayerWrapper;
 import org.bukkit.Bukkit;
 
 import java.util.*;

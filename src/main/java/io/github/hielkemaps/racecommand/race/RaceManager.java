@@ -1,6 +1,4 @@
-package io.github.hielkeminecraft.racecommand.race;
-
-import io.github.hielkeminecraft.racecommand.race.Race;
+package io.github.hielkemaps.racecommand.race;
 
 import java.util.HashMap;
 import java.util.UUID;
