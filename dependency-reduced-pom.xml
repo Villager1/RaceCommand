@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>io.github.hielkeminecraft</groupId>
+  <groupId>io.github.hielkemaps</groupId>
   <artifactId>RaceCommand</artifactId>
   <version>1.0.0</version>
   <build>
@@ -34,7 +34,7 @@
                 <filter>
                   <artifact>*:*</artifact>
                   <includes>
-                    <include>io/github/hielkeminecraft/**</include>
+                    <include>io/github/hielkemaps/**</include>
                     <include>plugin.yml</include>
                   </includes>
                 </filter>
@@ -76,7 +76,7 @@
     </repository>
     <repository>
       <id>mccommandapi</id>
-      <url>https://raw.githubusercontent.com/JorelAli/1.13-Command-API/mvn-repo/1.13CommandAPI/</url>
+      <url>https://raw.githubusercontent.com/JorelAli/CommandAPI/mvn-repo/</url>
     </repository>
   </repositories>
   <dependencies>

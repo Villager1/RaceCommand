@@ -11,17 +11,20 @@ public class PlayerManager {
 
     private static final Map<UUID, PlayerWrapper> players = new HashMap<>();
 
-    public static PlayerWrapper getPlayer(Player player) {
-        if (!players.containsKey(player.getUniqueId())) {
-            players.put(player.getUniqueId(), new PlayerWrapper(player));
+    public static void insertPlayer (UUID uuid) {
+        if (!players.containsKey(uuid)) {
+            players.put(uuid, new PlayerWrapper(uuid));
         }
-        return players.get(player.getUniqueId());
     }
 
     public static PlayerWrapper getPlayer(UUID uuid) {
         if (!players.containsKey(uuid)) {
-            players.put(uuid, new PlayerWrapper(Bukkit.getPlayer(uuid)));
+            players.put(uuid, new PlayerWrapper(uuid));
         }
         return players.get(uuid);
+    }
+
+    public static void removePlayer(Player player) {
+        players.remove(player.getUniqueId());
     }
 }
