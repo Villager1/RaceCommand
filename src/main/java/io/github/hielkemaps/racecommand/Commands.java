@@ -55,7 +55,13 @@ public class Commands {
                 .withArguments(arguments)
                 .executesPlayer((p, args) -> {
                     RaceManager.addRace(new Race(p.getUniqueId()));
-                    p.sendMessage(Main.PREFIX + "Created race! Invite players with /race invite");
+
+                    TextComponent msg = new TextComponent(Main.PREFIX + "Created race! Invite players with ");
+                    TextComponent click = new TextComponent(ChatColor.GREEN + "/race invite");
+                    click.setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/race invite "));
+                    msg.addExtra(click);
+
+                    p.spigot().sendMessage(msg);
                 }).register();
 
         //INVITE

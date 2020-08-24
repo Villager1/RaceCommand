@@ -12,6 +12,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Score;
+import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
 
 import java.util.*;
@@ -70,9 +73,15 @@ public class Race {
                 else if (seconds.get() > 3) sb.append(ChatColor.GREEN);
 
                 sb.append(ChatColor.BOLD).append(seconds.toString());
-                player.sendTitle(" ", sb.toString(), 2, 18, 2);
 
-                player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_HARP, 1, 1);
+                if (seconds.get() <= 10) {
+                    player.sendTitle(" ", sb.toString(), 2, 18, 2);
+                    player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_HARP, 1, 1);
+                } else {
+                    player.sendTitle(ChatColor.YELLOW + "Race starting in", sb.toString(), 0, 30, 0);
+                    player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_HAT, 0.1f, 1f);
+                }
+
                 player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 100, 0, true, false, false));
             }
             seconds.getAndDecrement();
@@ -96,11 +105,11 @@ public class Race {
         playingTask = Bukkit.getScheduler().runTaskTimer(Main.getInstance(), () -> {
 
             //stop race if everyone has finished
-            if(finishedPlayers.containsAll(players)){
-               stop();
+            if (finishedPlayers.containsAll(players)) {
+                stop();
                 for (UUID player : players) {
                     Player p = Bukkit.getPlayer(player);
-                    if(p != null){
+                    if (p != null) {
                         p.sendMessage(Main.PREFIX + "Race has ended");
                     }
                 }
@@ -127,7 +136,19 @@ public class Race {
             Player p = Bukkit.getPlayer(uuid);
             if (p == null) continue;
 
-            p.sendMessage(Main.PREFIX + ChatColor.GREEN + player.getName() + " finished!" + ChatColor.WHITE + " (" + Util.ordinal(finished) + " place)");
+            int time = -1;
+            ScoreboardManager m = Bukkit.getScoreboardManager();
+            if (m != null) {
+                Objective timeObjective = m.getMainScoreboard().getObjective("time");
+                if (timeObjective != null) {
+                    Score score = timeObjective.getScore(p.getName());
+                    if (score.isScoreSet()) {
+                        time = score.getScore();
+                    }
+                }
+            }
+
+            p.sendMessage(Main.PREFIX + ChatColor.GREEN + player.getName() + " finished " + Util.ordinal(finished) + "!" + ChatColor.WHITE + " (" + Util.getTimeString(time) + ")");
         }
         finishedPlayers.add(player.getUniqueId());
     }
@@ -236,9 +257,9 @@ public class Race {
     }
 
     private void cancelTasks() {
-        countDownTask.cancel();
-        countDownStopTask.cancel();
-        playingTask.cancel();
+        if (countDownTask != null) countDownTask.cancel();
+        if (countDownStopTask != null) countDownStopTask.cancel();
+        if (playingTask != null) playingTask.cancel();
     }
 
     public boolean isOwner(UUID uniqueId) {
