@@ -27,7 +27,6 @@ public class Race {
     private List<UUID> finishedPlayers = new ArrayList<>();
     private boolean isPublic = false;
     private int countDown = 5;
-    private int finished = 0;
     private boolean isStarting = false;
     private boolean hasStarted = false;
     private final Set<UUID> InvitedPlayers = new HashSet<>();
@@ -45,7 +44,6 @@ public class Race {
     }
 
     public void start() {
-        finished = 0;
         finishedPlayers = new ArrayList<>();
         isStarting = true;
         AtomicInteger seconds = new AtomicInteger(countDown);
@@ -131,7 +129,6 @@ public class Race {
     }
 
     private void hasFinished(Player player) {
-        finished++;
         for (UUID uuid : players) {
             Player p = Bukkit.getPlayer(uuid);
             if (p == null) continue;
@@ -148,7 +145,7 @@ public class Race {
                 }
             }
 
-            p.sendMessage(Main.PREFIX + ChatColor.GREEN + player.getName() + " finished " + Util.ordinal(finished) + "!" + ChatColor.WHITE + " (" + Util.getTimeString(time) + ")");
+            p.sendMessage(Main.PREFIX + ChatColor.GREEN + player.getName() + " finished!" + ChatColor.WHITE + " (" + Util.getTimeString(time) + ")");
         }
         finishedPlayers.add(player.getUniqueId());
     }
