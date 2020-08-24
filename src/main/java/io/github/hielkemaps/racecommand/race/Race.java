@@ -128,26 +128,28 @@ public class Race {
         updateRequirements();
     }
 
-    private void hasFinished(Player player) {
+    private void hasFinished(Player finished) {
+
+        //Get finish time
+        int time = -1;
+        ScoreboardManager m = Bukkit.getScoreboardManager();
+        if (m != null) {
+            Objective timeObjective = m.getMainScoreboard().getObjective("time");
+            if (timeObjective != null) {
+                Score score = timeObjective.getScore(finished.getName());
+                if (score.isScoreSet()) {
+                    time = score.getScore();
+                }
+            }
+        }
+
+        //Let other players know
         for (UUID uuid : players) {
             Player p = Bukkit.getPlayer(uuid);
             if (p == null) continue;
-
-            int time = -1;
-            ScoreboardManager m = Bukkit.getScoreboardManager();
-            if (m != null) {
-                Objective timeObjective = m.getMainScoreboard().getObjective("time");
-                if (timeObjective != null) {
-                    Score score = timeObjective.getScore(p.getName());
-                    if (score.isScoreSet()) {
-                        time = score.getScore();
-                    }
-                }
-            }
-
-            p.sendMessage(Main.PREFIX + ChatColor.GREEN + player.getName() + " finished!" + ChatColor.WHITE + " (" + Util.getTimeString(time) + ")");
+            p.sendMessage(Main.PREFIX + ChatColor.GREEN + finished.getName() + " finished!" + ChatColor.WHITE + " (" + Util.getTimeString(time) + ")");
         }
-        finishedPlayers.add(player.getUniqueId());
+        finishedPlayers.add(finished.getUniqueId());
     }
 
     private void updateRequirements() {

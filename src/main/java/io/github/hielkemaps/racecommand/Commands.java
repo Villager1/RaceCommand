@@ -57,7 +57,7 @@ public class Commands {
                     RaceManager.addRace(new Race(p.getUniqueId()));
 
                     TextComponent msg = new TextComponent(Main.PREFIX + "Created race! Invite players with ");
-                    TextComponent click = new TextComponent(ChatColor.GREEN + "/race invite");
+                    TextComponent click = new TextComponent(ChatColor.WHITE + "/race invite");
                     click.setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/race invite "));
                     msg.addExtra(click);
 
