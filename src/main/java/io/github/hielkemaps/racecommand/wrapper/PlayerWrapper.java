@@ -5,6 +5,9 @@ import io.github.hielkemaps.racecommand.race.Race;
 import io.github.hielkemaps.racecommand.race.RaceManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.ScoreboardManager;
+import org.bukkit.scoreboard.Team;
 
 import java.util.*;
 
@@ -12,7 +15,6 @@ public class PlayerWrapper {
 
     private final UUID uuid;
     private boolean inRace = false;
-    private final Set<UUID> raceInvited = new HashSet<>();
     private final Set<UUID> raceInvites = new HashSet<>();
 
     public PlayerWrapper(UUID uuid) {
@@ -32,67 +34,58 @@ public class PlayerWrapper {
         updateRequirements();
     }
 
-    public void invitePlayerToRun(UUID invited) {
-        raceInvited.add(invited);
-        PlayerManager.getPlayer(invited).addInvite(getPlayer());
-    }
-
     public boolean hasJoinableRace() {
         return !raceInvites.isEmpty() || RaceManager.hasJoinablePublicRace(uuid);
     }
 
     public String[] getJoinableRaces() {
-
-        List<String> names = new ArrayList<>();
+        List<String> joinable = new ArrayList<>();
 
         //Add invites
         for (UUID uuid : raceInvites) {
             Player p = Bukkit.getPlayer(uuid);
-            if (p != null) names.add(p.getName());
-        }
+            if (p != null) {
 
-        //Add open races
-        for (UUID uuid : RaceManager.publicRaces) {
-            Player owner = Bukkit.getPlayer(uuid);
-            if(owner != null){
-                //Exclude when player is owner
-                if (!uuid.equals(this.uuid)) {
-                    names.add(owner.getName());
+                Race race = RaceManager.getRace(p.getUniqueId());
+                if (race != null && !race.hasStarted()) {
+                    joinable.add(p.getName());
                 }
             }
         }
-        return names.toArray(new String[0]);
+        //Add open races
+        for (UUID uuid : RaceManager.publicRaces) {
+            Player owner = Bukkit.getPlayer(uuid);
+            if (owner != null) {
+                //Exclude when player is owner
+                if (!uuid.equals(this.uuid)) {
+
+                    Race race = RaceManager.getRace(owner.getUniqueId());
+                    if (race != null && !race.hasStarted()) {
+                        joinable.add(owner.getName());
+                    }
+                }
+            }
+        }
+        return joinable.toArray(new String[0]);
     }
 
-    private void addInvite(Player sender) {
-        raceInvites.add(sender.getUniqueId());
+    public void addInvite(UUID sender) {
+        raceInvites.add(sender);
         updateRequirements();
     }
 
     public boolean acceptInvite(UUID sender) {
         Race race = RaceManager.getRace(sender);
-        if(race == null) return false;
+        if (race == null) return false;
 
         //Join race
         race.addPlayer(uuid);
+        race.removeInvited(uuid);
 
         //Update requirements
-        PlayerManager.getPlayer(sender).removeInvited(uuid);
         raceInvites.remove(sender);
         updateRequirements();
         return true;
-    }
-
-    private void removeInvited(UUID invited) {
-        raceInvited.remove(invited);
-    }
-
-    public boolean hasInvited(Player p) {
-        return raceInvited.contains(p.getUniqueId());
-    }
-
-    public Set<UUID> getInvitedPlayers() {
-        return raceInvited;
     }
 
     public void removeInvite(UUID from) {
@@ -100,14 +93,30 @@ public class PlayerWrapper {
 
     }
 
-    public void updateRequirements(){
+    public void updateRequirements() {
         Player player = getPlayer();
-        if(player == null)return;
+        if (player == null) return;
 
         CommandAPI.updateRequirements(player);
     }
 
     public Set<UUID> getInvites() {
         return raceInvites;
+    }
+
+    public Team getTeam() {
+        Player p = Bukkit.getPlayer(uuid);
+        if(p == null) return null;
+
+        ScoreboardManager manager = Bukkit.getServer().getScoreboardManager();
+        if(manager == null) return null;
+
+        Scoreboard scoreboard = manager.getMainScoreboard();
+
+        for (Team team : scoreboard.getTeams()) {
+            if (team.hasEntry(p.getName())) return team;
+        }
+        return null;
+
     }
 }

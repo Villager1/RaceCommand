@@ -2,6 +2,7 @@ package io.github.hielkemaps.racecommand;
 
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
+import dev.jorel.commandapi.arguments.IntegerArgument;
 import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.arguments.PlayerArgument;
 import io.github.hielkemaps.racecommand.race.Race;
@@ -24,19 +25,20 @@ public class Commands {
 
         //START
         LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
-        arguments.put("start", new LiteralArgument("start").withRequirement(playerInRace.and(playerIsRaceOwner)));
+        arguments.put("start", new LiteralArgument("start").withRequirement(playerInRace.and(playerIsRaceOwner).and(raceHasStarted.negate().and(raceIsStarting.negate()))));
         new CommandAPICommand("race")
                 .withArguments(arguments)
                 .executesPlayer((p, args) -> {
 
                     Race race = RaceManager.getRace(p.getUniqueId());
-                    Objects.requireNonNull(race).start();
-                    p.sendMessage(Main.PREFIX + "Starting race...");
+                    if (race == null) return;
+
+                    race.start();
                 }).register();
 
         //STOP
         arguments = new LinkedHashMap<>();
-        arguments.put("stop", new LiteralArgument("stop").withRequirement(playerInRace.and(playerIsRaceOwner)));
+        arguments.put("stop", new LiteralArgument("stop").withRequirement(playerInRace.and(playerIsRaceOwner).and(raceHasStarted.or(raceIsStarting))));
         new CommandAPICommand("race")
                 .withArguments(arguments)
                 .executesPlayer((p, args) -> {
@@ -84,19 +86,22 @@ public class Commands {
                         return;
                     }
 
+                    Race race = RaceManager.getRace(p.getUniqueId());
+                    if (race == null) return;
+
                     //If player is already in race
-                    if (Objects.requireNonNull(RaceManager.getRace(p.getUniqueId())).hasPlayer(invited.getUniqueId())) {
+                    if (race.hasPlayer(invited.getUniqueId())) {
                         p.sendMessage(Main.PREFIX + "That player is already in your race");
                         return;
                     }
 
                     //If already invited
-                    if (PlayerManager.getPlayer(p.getUniqueId()).getInvitedPlayers().contains(invited.getUniqueId())) {
+                    if (race.hasInvited(invited)) {
                         p.sendMessage(Main.PREFIX + "You have already invited that player");
                         return;
                     }
 
-                    PlayerManager.getPlayer(p.getUniqueId()).invitePlayerToRun(invited.getUniqueId());
+                    race.invitePlayer(invited.getUniqueId());
                     TextComponent msg = new TextComponent(Main.PREFIX + p.getName() + " wants to race! ");
                     TextComponent accept = new TextComponent(ChatColor.GREEN + "[Accept]");
                     accept.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/race join " + p.getName()));
@@ -107,7 +112,7 @@ public class Commands {
 
                 }).register();
 
-        //Join
+        //JOIN
         arguments = new LinkedHashMap<>();
         arguments.put("join", new LiteralArgument("join").withRequirement(playerHasJoinableRaces));
         arguments.put("player", new PlayerArgument().overrideSuggestions((sender) -> PlayerManager.getPlayer(((Player) sender).getUniqueId()).getJoinableRaces()));
@@ -117,8 +122,11 @@ public class Commands {
             PlayerWrapper wPlayer = PlayerManager.getPlayer(p.getUniqueId());
             if (wPlayer.isInRace()) {
 
+                Race race = RaceManager.getRace(sender.getUniqueId());
+                if (race == null) return;
+
                 //If already in race
-                if (Objects.requireNonNull(RaceManager.getRace(sender.getUniqueId())).getPlayers().contains(p.getUniqueId())) {
+                if (race.getPlayers().contains(p.getUniqueId())) {
                     p.sendMessage(Main.PREFIX + "You already joined this race");
                     return;
                 }
@@ -131,7 +139,12 @@ public class Commands {
             if (race == null) return;
 
             PlayerWrapper raceOwner = PlayerManager.getPlayer(sender.getUniqueId());
-            if (race.isPublic() || raceOwner.hasInvited(p)) {
+            if (race.isPublic() || race.hasInvited(p)) {
+
+                if (race.hasStarted()) {
+                    p.sendMessage(Main.PREFIX + "Can't join race: This race has already started");
+                    return;
+                }
 
                 if (wPlayer.acceptInvite(sender.getUniqueId())) {
                     p.sendMessage(Main.PREFIX + "You joined the race!");
@@ -237,7 +250,28 @@ public class Commands {
                         }
                     }).register();
         }
+
+        //Option countdown
+        arguments = new LinkedHashMap<>();
+        arguments.put("option", new LiteralArgument("option").withRequirement(playerInRace.and(playerIsRaceOwner)));
+        arguments.put("countdown", new LiteralArgument("countdown"));
+        arguments.put("seconds", new IntegerArgument(3, 1000));
+        new CommandAPICommand("race")
+                .withArguments(arguments)
+                .executesPlayer((p, args) -> {
+                    int value = (int) args[0];
+
+                    Race race = RaceManager.getRace(p.getUniqueId());
+                    if (race == null) return;
+
+                    if (race.setCountDown(value)) {
+                        p.sendMessage(Main.PREFIX + "Set countdown to " + value + " seconds");
+                    } else {
+                        p.sendMessage(Main.PREFIX + ChatColor.RED + "Nothing changed. Countdown was already " + value + " seconds");
+                    }
+                }).register();
     }
+
 
     Predicate<CommandSender> playerInRace = sender -> PlayerManager.getPlayer(((Player) sender).getUniqueId()).isInRace();
 
@@ -251,6 +285,26 @@ public class Commands {
         if (race == null) return false;
 
         return race.isOwner(player.getUniqueId());
+    };
+
+    Predicate<CommandSender> raceHasStarted = sender -> {
+        Player player = (Player) sender;
+        if (player == null) return false;
+
+        Race race = RaceManager.getRace(player.getUniqueId());
+        if (race == null) return false;
+
+        return race.hasStarted();
+    };
+
+    Predicate<CommandSender> raceIsStarting = sender -> {
+        Player player = (Player) sender;
+        if (player == null) return false;
+
+        Race race = RaceManager.getRace(player.getUniqueId());
+        if (race == null) return false;
+
+        return race.isStarting();
     };
 
     Predicate<CommandSender> playerToKick = sender -> {

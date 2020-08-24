@@ -2,6 +2,7 @@ package io.github.hielkemaps.racecommand.race;
 
 import dev.jorel.commandapi.CommandAPI;
 import io.github.hielkemaps.racecommand.Main;
+import io.github.hielkemaps.racecommand.Util;
 import io.github.hielkemaps.racecommand.wrapper.PlayerManager;
 import io.github.hielkemaps.racecommand.wrapper.PlayerWrapper;
 import org.bukkit.Bukkit;
@@ -11,22 +12,26 @@ import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.scoreboard.Team;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Race {
 
     private final UUID owner;
     private final List<UUID> players = new ArrayList<>();
+    private List<UUID> finishedPlayers = new ArrayList<>();
     private boolean isPublic = false;
     private int countDown = 5;
+    private int finished = 0;
+    private boolean isStarting = false;
+    private boolean hasStarted = false;
+    private final Set<UUID> InvitedPlayers = new HashSet<>();
 
     private BukkitTask countDownTask;
-    private BukkitTask tickTask;
+    private BukkitTask countDownStopTask;
+    private BukkitTask playingTask;
 
     public Race(UUID owner) {
         this.owner = owner;
@@ -37,7 +42,9 @@ public class Race {
     }
 
     public void start() {
-
+        finished = 0;
+        finishedPlayers = new ArrayList<>();
+        isStarting = true;
         AtomicInteger seconds = new AtomicInteger(countDown);
 
         //Tp players to start
@@ -45,11 +52,12 @@ public class Race {
             Player player = Bukkit.getPlayer(uuid);
             if (player == null) continue;
 
+            player.sendMessage(Main.PREFIX + "Starting race...");
             player.performCommand("/trigger restart");
         }
 
         //Countdown
-        countDownTask = Bukkit.getScheduler().runTaskTimerAsynchronously(Main.getInstance(), () -> {
+        countDownTask = Bukkit.getScheduler().runTaskTimer(Main.getInstance(), () -> {
             for (UUID uuid : players) {
                 Player player = Bukkit.getPlayer(uuid);
                 if (player == null) continue;
@@ -65,12 +73,13 @@ public class Race {
                 player.sendTitle(" ", sb.toString(), 2, 18, 2);
 
                 player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_HARP, 1, 1);
+                player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 100, 0, true, false, false));
             }
             seconds.getAndDecrement();
         }, 0, 20);
 
         //Stop countdown
-        Bukkit.getScheduler().runTaskLaterAsynchronously(Main.getInstance(), () -> {
+        countDownStopTask = Bukkit.getScheduler().runTaskLaterAsynchronously(Main.getInstance(), () -> {
             countDownTask.cancel();
 
             for (UUID uuid : players) {
@@ -79,26 +88,75 @@ public class Race {
 
                 player.sendTitle(" ", ChatColor.BOLD + "GO", 2, 18, 2);
                 player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_HARP, 1, 2);
+                isStarting = false;
+                hasStarted = true;
             }
         }, 20 * countDown);
 
-        //Every second
-        tickTask = Bukkit.getScheduler().runTaskTimerAsynchronously(Main.getInstance(), () -> {
+        playingTask = Bukkit.getScheduler().runTaskTimer(Main.getInstance(), () -> {
+
+            //stop race if everyone has finished
+            if(finishedPlayers.containsAll(players)){
+               stop();
+                for (UUID player : players) {
+                    Player p = Bukkit.getPlayer(player);
+                    if(p != null){
+                        p.sendMessage(Main.PREFIX + "Race has ended");
+                    }
+                }
+            }
+
             for (UUID uuid : players) {
+                if (finishedPlayers.contains(uuid)) continue;
+
                 Player player = Bukkit.getPlayer(uuid);
                 if (player == null) continue;
 
-                player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 20, 1, true, false, false));
+                Team team = PlayerManager.getPlayer(uuid).getTeam();
+                if (team.getName().equals("finished")) {
+                    hasFinished(player);
+                }
             }
-        }, 0, 20);
+        }, countDown * 20, 1);
+        updateRequirements();
+    }
+
+    private void hasFinished(Player player) {
+        finished++;
+        for (UUID uuid : players) {
+            Player p = Bukkit.getPlayer(uuid);
+            if (p == null) continue;
+
+            p.sendMessage(Main.PREFIX + ChatColor.GREEN + player.getName() + " finished!" + ChatColor.WHITE + " (" + Util.ordinal(finished) + " place)");
+        }
+        finishedPlayers.add(player.getUniqueId());
+    }
+
+    private void updateRequirements() {
+        //If race is public, update everyone
+        if (isPublic) {
+            for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+                CommandAPI.updateRequirements(onlinePlayer);
+            }
+        } else {
+            //Otherwise update invited
+            for (UUID uuid : InvitedPlayers) {
+                PlayerManager.getPlayer(uuid).updateRequirements();
+            }
+            //Update start/stop requirement for owner only
+            PlayerManager.getPlayer(owner).updateRequirements();
+        }
     }
 
     public void stop() {
         cancelTasks();
+        isStarting = false;
+        hasStarted = false;
+        updateRequirements();
     }
 
     public boolean setCountDown(int value) {
-        if (countDown == value) return true;
+        if (countDown == value) return false;
 
         countDown = value;
         return true;
@@ -112,6 +170,9 @@ public class Race {
 
         PlayerWrapper pw = PlayerManager.getPlayer(uuid);
         pw.setInRace(true);
+
+        //If joined in countdown, but to start
+        if (isStarting) pw.getPlayer().performCommand("/trigger restart");
 
         PlayerManager.getPlayer(owner).updateRequirements();
     }
@@ -153,12 +214,12 @@ public class Race {
 
     protected void disband() {
         cancelTasks();
-        
+
         //get race off public visibility
         setIsPublic(false);
 
         //Clear outgoing invites
-        PlayerManager.getPlayer(owner).getInvitedPlayers().forEach(uuid -> {
+        getInvitedPlayers().forEach(uuid -> {
             PlayerWrapper wPlayer = PlayerManager.getPlayer(uuid);
             wPlayer.removeInvite(owner);
         });
@@ -176,7 +237,8 @@ public class Race {
 
     private void cancelTasks() {
         countDownTask.cancel();
-        tickTask.cancel();
+        countDownStopTask.cancel();
+        playingTask.cancel();
     }
 
     public boolean isOwner(UUID uniqueId) {
@@ -204,10 +266,32 @@ public class Race {
             RaceManager.publicRaces.remove(owner);
         }
 
-        //Let everyone know
-        for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-            CommandAPI.updateRequirements(onlinePlayer);
-        }
+        updateRequirements();
         return true;
+    }
+
+    public boolean isStarting() {
+        return isStarting;
+    }
+
+    public boolean hasStarted() {
+        return hasStarted;
+    }
+
+    public void invitePlayer(UUID invited) {
+        InvitedPlayers.add(invited);
+        PlayerManager.getPlayer(invited).addInvite(owner);
+    }
+
+    public void removeInvited(UUID invited) {
+        InvitedPlayers.remove(invited);
+    }
+
+    public boolean hasInvited(Player p) {
+        return InvitedPlayers.contains(p.getUniqueId());
+    }
+
+    public Set<UUID> getInvitedPlayers() {
+        return InvitedPlayers;
     }
 }
