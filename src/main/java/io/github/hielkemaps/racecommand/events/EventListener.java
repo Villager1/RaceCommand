@@ -5,8 +5,10 @@ import io.github.hielkemaps.racecommand.race.RaceManager;
 import io.github.hielkemaps.racecommand.race.Race;
 import io.github.hielkemaps.racecommand.wrapper.PlayerManager;
 import org.bukkit.Location;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -35,7 +37,23 @@ public class EventListener implements Listener {
             }
         }
     }
-
+@EventHandler
+public void OnPlayerDamaged(EntityDamageByEntityEvent e){
+        if (e.getDamager() instanceof Player && e.getEntity() instanceof Player){
+            if (PlayerManager.getPlayer(e.getEntity().getUniqueId()).isInRace()){
+                if (RaceManager.getRace(e.getEntity().getUniqueId()).isPvp()){
+                    if (PlayerManager.getPlayer(e.getDamager().getUniqueId()).isInRace()){
+                        if (RaceManager.getRace(e.getDamager().getUniqueId()).isPvp()){
+                            if (RaceManager.getRace(e.getDamager().getUniqueId()).getOwner() == RaceManager.getRace(e.getEntity().getUniqueId()).getOwner()) {
+                                e.setCancelled(false);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        e.setCancelled(true);
+}
     @EventHandler
     public void OnPlayerMove(PlayerMoveEvent e) {
 
