@@ -54,7 +54,7 @@ public class Race {
             if (player == null) continue;
 
             player.sendMessage(Main.PREFIX + "Starting race...");
-            player.performCommand("/trigger restart");
+            player.performCommand("restart");
         }
 
         //Countdown
