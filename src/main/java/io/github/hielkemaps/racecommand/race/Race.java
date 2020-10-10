@@ -30,7 +30,7 @@ public class Race {
     private boolean isStarting = false;
     private boolean hasStarted = false;
     private final Set<UUID> InvitedPlayers = new HashSet<>();
-private boolean pvp = false;
+    private boolean pvp = false;
     private BukkitTask countDownTask;
     private BukkitTask countDownStopTask;
     private BukkitTask playingTask;
@@ -42,17 +42,7 @@ private boolean pvp = false;
         PlayerWrapper pw = PlayerManager.getPlayer(owner);
         pw.setInRace(true);
     }
-public boolean isPvp(){
-        return pvp;
-}
-public boolean setPvp(boolean pvp){
 
-        if (pvp == this.pvp){
-            return false;
-        }
-    this.pvp = pvp;
-        return true;
-}
     public void start() {
         finishedPlayers = new ArrayList<>();
         isStarting = true;
@@ -297,6 +287,18 @@ public boolean setPvp(boolean pvp){
         }
 
         updateRequirements();
+        return true;
+    }
+
+    public boolean isPvp() {
+        return pvp;
+    }
+
+    public boolean setPvp(boolean value) {
+        //Same value, do nothing
+        if (value == pvp) return false;
+
+        pvp = value;
         return true;
     }
 

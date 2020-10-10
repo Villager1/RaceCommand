@@ -1,8 +1,8 @@
 package io.github.hielkemaps.racecommand.events;
 
 import dev.jorel.commandapi.CommandAPI;
-import io.github.hielkemaps.racecommand.race.RaceManager;
 import io.github.hielkemaps.racecommand.race.Race;
+import io.github.hielkemaps.racecommand.race.RaceManager;
 import io.github.hielkemaps.racecommand.wrapper.PlayerManager;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -37,28 +37,39 @@ public class EventListener implements Listener {
             }
         }
     }
-@EventHandler
-public void OnPlayerDamaged(EntityDamageByEntityEvent e){
-        if (e.getDamager() instanceof Player && e.getEntity() instanceof Player){
-            if (PlayerManager.getPlayer(e.getEntity().getUniqueId()).isInRace()){
-                if (RaceManager.getRace(e.getEntity().getUniqueId()).isPvp()){
-                    if (PlayerManager.getPlayer(e.getDamager().getUniqueId()).isInRace()){
-                        if (RaceManager.getRace(e.getDamager().getUniqueId()).isPvp()){
-                            if (RaceManager.getRace(e.getDamager().getUniqueId()).getOwner() == RaceManager.getRace(e.getEntity().getUniqueId()).getOwner()) {
-                                e.setCancelled(false);
-                            }
-                        }
+
+    @EventHandler
+    public void OnPlayerDamaged(EntityDamageByEntityEvent e) {
+
+        //If player damages another player
+        if (e.getDamager() instanceof Player && e.getEntity() instanceof Player) {
+            UUID player = e.getEntity().getUniqueId();
+            UUID attacker = e.getDamager().getUniqueId();
+
+            Race playerRace = RaceManager.getRace(player);
+
+            //If race has pvp enabled
+            if (playerRace != null && playerRace.isPvp()) {
+
+                //If both players are in the same race
+                if (playerRace.getPlayers().contains(attacker)) {
+
+                    //if race has started
+                    if (playerRace.hasStarted()) {
+                        e.setCancelled(false); //allow pvp
+                        return;
                     }
                 }
             }
         }
-        e.setCancelled(true);
-}
+        e.setCancelled(true); //disable pvp
+    }
+
     @EventHandler
     public void OnPlayerMove(PlayerMoveEvent e) {
 
         //Freeze players in starting race
-        if(PlayerManager.getPlayer(e.getPlayer().getUniqueId()).isInRace()) {
+        if (PlayerManager.getPlayer(e.getPlayer().getUniqueId()).isInRace()) {
 
             Race race = RaceManager.getRace(e.getPlayer().getUniqueId());
             if (race == null) return;

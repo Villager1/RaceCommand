@@ -145,7 +145,6 @@ public class Commands {
             Race race = RaceManager.getRace(sender.getUniqueId());
             if (race == null) return;
 
-            PlayerWrapper raceOwner = PlayerManager.getPlayer(sender.getUniqueId());
             if (race.isPublic() || race.hasInvited(p)) {
 
                 if (race.hasStarted()) {
@@ -277,6 +276,7 @@ public class Commands {
                         p.sendMessage(Main.PREFIX + ChatColor.RED + "Nothing changed. Countdown was already " + value + " seconds");
                     }
                 }).register();
+
         //Option pvp
         arguments = new LinkedHashMap<>();
         arguments.put("option", new LiteralArgument("option").withRequirement(playerInRace.and(playerIsRaceOwner)));
