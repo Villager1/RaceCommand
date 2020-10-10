@@ -30,7 +30,7 @@ public class Race {
     private boolean isStarting = false;
     private boolean hasStarted = false;
     private final Set<UUID> InvitedPlayers = new HashSet<>();
-
+    private boolean pvp = false;
     private BukkitTask countDownTask;
     private BukkitTask countDownStopTask;
     private BukkitTask playingTask;
@@ -287,6 +287,18 @@ public class Race {
         }
 
         updateRequirements();
+        return true;
+    }
+
+    public boolean isPvp() {
+        return pvp;
+    }
+
+    public boolean setPvp(boolean value) {
+        //Same value, do nothing
+        if (value == pvp) return false;
+
+        pvp = value;
         return true;
     }
 

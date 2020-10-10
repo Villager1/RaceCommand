@@ -81,6 +81,7 @@ public class Commands {
             }
             return names.toArray(new String[0]);
         }));
+
         new CommandAPICommand("race")
                 .withArguments(arguments)
                 .executesPlayer((p, args) -> {
@@ -144,7 +145,6 @@ public class Commands {
             Race race = RaceManager.getRace(sender.getUniqueId());
             if (race == null) return;
 
-            PlayerWrapper raceOwner = PlayerManager.getPlayer(sender.getUniqueId());
             if (race.isPublic() || race.hasInvited(p)) {
 
                 if (race.hasStarted()) {
@@ -276,8 +276,25 @@ public class Commands {
                         p.sendMessage(Main.PREFIX + ChatColor.RED + "Nothing changed. Countdown was already " + value + " seconds");
                     }
                 }).register();
-    }
 
+        //Option pvp
+        arguments = new LinkedHashMap<>();
+        arguments.put("option", new LiteralArgument("option").withRequirement(playerInRace.and(playerIsRaceOwner)));
+        arguments.put("pvp", new LiteralArgument("pvp"));
+        String[] pvp = {"on", "off"};
+        for (String s : pvp) {
+            arguments.put("value", new LiteralArgument(s));
+            new CommandAPICommand("race")
+                    .withArguments(arguments)
+                    .executesPlayer((p, args) -> {
+                        if (Objects.requireNonNull(RaceManager.getRace(p.getUniqueId())).setPvp(s.equals("on"))) {
+                            p.sendMessage(Main.PREFIX + "Set pvp " + s);
+                        } else {
+                            p.sendMessage(Main.PREFIX + ChatColor.RED + "Nothing changed. Race pvp was already " + s);
+                        }
+                    }).register();
+        }
+    }
 
     Predicate<CommandSender> playerInRace = sender -> PlayerManager.getPlayer(((Player) sender).getUniqueId()).isInRace();
 
@@ -322,4 +339,5 @@ public class Commands {
 
         return race.getPlayers().size() > 1;
     };
+
 }

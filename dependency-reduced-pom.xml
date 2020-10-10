@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.github.hielkemaps</groupId>
   <artifactId>RaceCommand</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
   <build>
     <resources>
       <resource>
@@ -54,7 +54,7 @@
               <goal>copy-resources</goal>
             </goals>
             <configuration>
-              <outputDirectory>D:\Servers\network\lobby\plugins</outputDirectory>
+              <outputDirectory>D:\Servers\network\parkour-spiral\plugins</outputDirectory>
               <resources>
                 <resource>
                   <directory>/target</directory>
