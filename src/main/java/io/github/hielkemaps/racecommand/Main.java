@@ -2,6 +2,7 @@ package io.github.hielkemaps.racecommand;
 
 import io.github.hielkemaps.racecommand.events.EventListener;
 import org.bukkit.ChatColor;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -9,6 +10,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class Main extends JavaPlugin {
 
     private static Plugin instance;
+
+    public static String startFunction;
 
     public Main() {
         instance = this;
@@ -22,6 +25,10 @@ public class Main extends JavaPlugin {
 
     @Override
     public void onEnable() {
+
+        saveDefaultConfig();
+        FileConfiguration config = getConfig();
+        startFunction = config.getString("start-function");
 
         //Register commands
         new Commands();

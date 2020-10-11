@@ -19,7 +19,7 @@ public class EventListener implements Listener {
 
     @EventHandler
     public void OnPlayerJoin(PlayerJoinEvent e) {
-
+        e.getPlayer().removeScoreboardTag("inRace");
         PlayerManager.insertPlayer(e.getPlayer().getUniqueId());
         CommandAPI.updateRequirements(e.getPlayer());
     }

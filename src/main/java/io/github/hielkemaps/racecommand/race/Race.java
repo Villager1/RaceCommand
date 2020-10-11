@@ -31,6 +31,7 @@ public class Race {
     private boolean hasStarted = false;
     private final Set<UUID> InvitedPlayers = new HashSet<>();
     private boolean pvp = false;
+    private int place = 1;
     private BukkitTask countDownTask;
     private BukkitTask countDownStopTask;
     private BukkitTask playingTask;
@@ -44,6 +45,7 @@ public class Race {
     }
 
     public void start() {
+        place = 1;
         finishedPlayers = new ArrayList<>();
         isStarting = true;
         AtomicInteger seconds = new AtomicInteger(countDown);
@@ -86,7 +88,7 @@ public class Race {
         }, 0, 20);
 
         //Stop countdown
-        countDownStopTask = Bukkit.getScheduler().runTaskLaterAsynchronously(Main.getInstance(), () -> {
+        countDownStopTask = Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
             countDownTask.cancel();
 
             for (UUID uuid : players) {
@@ -95,6 +97,12 @@ public class Race {
 
                 player.sendTitle(" ", ChatColor.BOLD + "GO", 2, 18, 2);
                 player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_HARP, 1, 2);
+                player.addScoreboardTag("inRace");
+
+                if (Main.startFunction != null && !Main.startFunction.equals("")) {
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "execute as " + player.getName() + " run function " + Main.startFunction);
+                }
+
                 isStarting = false;
                 hasStarted = true;
             }
@@ -147,8 +155,9 @@ public class Race {
         for (UUID uuid : players) {
             Player p = Bukkit.getPlayer(uuid);
             if (p == null) continue;
-            p.sendMessage(Main.PREFIX + ChatColor.GREEN + finished.getName() + " finished!" + ChatColor.WHITE + " (" + Util.getTimeString(time) + ")");
+            p.sendMessage(Main.PREFIX + ChatColor.GREEN + finished.getName() + " finished " + Util.ordinal(place) + " place!" + ChatColor.WHITE + " (" + Util.getTimeString(time) + ")");
         }
+        place++;
         finishedPlayers.add(finished.getUniqueId());
     }
 
@@ -169,6 +178,7 @@ public class Race {
     }
 
     public void stop() {
+        players.forEach(p -> Objects.requireNonNull(Bukkit.getPlayer(p)).removeScoreboardTag("inRace"));
         cancelTasks();
         isStarting = false;
         hasStarted = false;
@@ -183,9 +193,7 @@ public class Race {
     }
 
     public void addPlayer(UUID uuid) {
-        players.forEach(p -> {
-            Objects.requireNonNull(Bukkit.getPlayer(p)).sendMessage(Main.PREFIX + Objects.requireNonNull(Bukkit.getPlayer(uuid)).getName() + " has joined the race");
-        });
+        players.forEach(p -> Objects.requireNonNull(Bukkit.getPlayer(p)).sendMessage(Main.PREFIX + Objects.requireNonNull(Bukkit.getPlayer(uuid)).getName() + " has joined the race"));
         players.add(uuid);
 
         PlayerWrapper pw = PlayerManager.getPlayer(uuid);
@@ -204,9 +212,7 @@ public class Race {
     public void leavePlayer(UUID uuid) {
         removePlayer(uuid);
 
-        players.forEach(p -> {
-            Objects.requireNonNull(Bukkit.getPlayer(p)).sendMessage(Main.PREFIX + Objects.requireNonNull(Bukkit.getPlayer(uuid)).getName() + " has left the race");
-        });
+        players.forEach(p -> Objects.requireNonNull(Bukkit.getPlayer(p)).sendMessage(Main.PREFIX + Objects.requireNonNull(Bukkit.getPlayer(uuid)).getName() + " has left the race"));
     }
 
     public void kickPlayer(UUID uuid) {
@@ -214,15 +220,14 @@ public class Race {
 
         Objects.requireNonNull(Bukkit.getPlayer(uuid)).sendMessage(Main.PREFIX + "You have been kicked from the race");
 
-        players.forEach(p -> {
-            Objects.requireNonNull(Bukkit.getPlayer(p)).sendMessage(Main.PREFIX + Objects.requireNonNull(Bukkit.getPlayer(uuid)).getName() + " has been kicked from the race");
-        });
+        players.forEach(p -> Objects.requireNonNull(Bukkit.getPlayer(p)).sendMessage(Main.PREFIX + Objects.requireNonNull(Bukkit.getPlayer(uuid)).getName() + " has been kicked from the race"));
     }
 
     private void removePlayer(UUID uuid) {
         players.remove(uuid);
 
         PlayerWrapper pw = PlayerManager.getPlayer(uuid);
+        pw.getPlayer().removeScoreboardTag("inRace");
         pw.setInRace(false);
 
         PlayerManager.getPlayer(owner).updateRequirements();
@@ -247,6 +252,7 @@ public class Race {
         players.forEach(p -> {
             PlayerWrapper pw = PlayerManager.getPlayer(p);
             pw.setInRace(false);
+            pw.getPlayer().removeScoreboardTag("inRace");
 
             //Tell other players in race
             if (!p.equals(owner)) {
