@@ -31,10 +31,12 @@ public class Race {
     private boolean hasStarted = false;
     private final Set<UUID> InvitedPlayers = new HashSet<>();
     private boolean pvp = false;
+    private boolean broadcast = false;
     private int place = 1;
     private BukkitTask countDownTask;
     private BukkitTask countDownStopTask;
     private BukkitTask playingTask;
+
 
     public Race(UUID owner) {
         this.owner = owner;
@@ -50,13 +52,12 @@ public class Race {
         isStarting = true;
         AtomicInteger seconds = new AtomicInteger(countDown);
 
+        sendMessage(Main.PREFIX + "Starting race...");
+
         //Tp players to start
         for (UUID uuid : players) {
             Player player = Bukkit.getPlayer(uuid);
-            if (player == null) continue;
-
-            player.sendMessage(Main.PREFIX + "Starting race...");
-            player.performCommand("restart");
+            if (player != null) player.performCommand("restart");
         }
 
         //Countdown
@@ -106,6 +107,8 @@ public class Race {
                 isStarting = false;
                 hasStarted = true;
             }
+
+            sendMessage(Main.PREFIX + "Race has started");
         }, 20 * countDown);
 
         playingTask = Bukkit.getScheduler().runTaskTimer(Main.getInstance(), () -> {
@@ -113,12 +116,7 @@ public class Race {
             //stop race if everyone has finished
             if (finishedPlayers.containsAll(players)) {
                 stop();
-                for (UUID player : players) {
-                    Player p = Bukkit.getPlayer(player);
-                    if (p != null) {
-                        p.sendMessage(Main.PREFIX + "Race has ended");
-                    }
-                }
+                sendMessage(Main.PREFIX + "Race has ended");
             }
 
             for (UUID uuid : players) {
@@ -151,12 +149,9 @@ public class Race {
             }
         }
 
-        //Let other players know
-        for (UUID uuid : players) {
-            Player p = Bukkit.getPlayer(uuid);
-            if (p == null) continue;
-            p.sendMessage(Main.PREFIX + ChatColor.GREEN + finished.getName() + " finished " + Util.ordinal(place) + " place!" + ChatColor.WHITE + " (" + Util.getTimeString(time) + ")");
-        }
+        //Let players know
+        sendMessage(Main.PREFIX + ChatColor.GREEN + finished.getName() + " finished " + Util.ordinal(place) + " place!" + ChatColor.WHITE + " (" + Util.getTimeString(time) + ")");
+
         place++;
         finishedPlayers.add(finished.getUniqueId());
     }
@@ -280,11 +275,9 @@ public class Race {
     }
 
     public boolean setIsPublic(boolean value) {
-
-        //Same value, do nothing
         if (value == isPublic) return false;
 
-        this.isPublic = value;
+        isPublic = value;
 
         if (value) {
             RaceManager.publicRaces.add(owner);
@@ -301,10 +294,16 @@ public class Race {
     }
 
     public boolean setPvp(boolean value) {
-        //Same value, do nothing
         if (value == pvp) return false;
 
         pvp = value;
+        return true;
+    }
+
+    public boolean setBroadcast(boolean value) {
+        if (value == broadcast) return false;
+
+        broadcast = value;
         return true;
     }
 
@@ -316,7 +315,7 @@ public class Race {
         return hasStarted;
     }
 
-    public boolean hasFinished(UUID player){
+    public boolean hasFinished(UUID player) {
         return finishedPlayers.contains(player);
     }
 
@@ -335,5 +334,17 @@ public class Race {
 
     public Set<UUID> getInvitedPlayers() {
         return InvitedPlayers;
+    }
+
+    public void sendMessage(String message) {
+
+        if (broadcast) {
+            Bukkit.getOnlinePlayers().forEach(player -> player.sendMessage(message));
+        } else {
+            for (UUID uuid : players) {
+                Player p = Bukkit.getPlayer(uuid);
+                if (p != null) p.sendMessage(message);
+            }
+        }
     }
 }

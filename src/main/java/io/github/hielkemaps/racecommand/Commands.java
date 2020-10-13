@@ -1,10 +1,8 @@
 package io.github.hielkemaps.racecommand;
 
 import dev.jorel.commandapi.CommandAPICommand;
-import dev.jorel.commandapi.arguments.Argument;
-import dev.jorel.commandapi.arguments.IntegerArgument;
-import dev.jorel.commandapi.arguments.LiteralArgument;
-import dev.jorel.commandapi.arguments.PlayerArgument;
+import dev.jorel.commandapi.CommandPermission;
+import dev.jorel.commandapi.arguments.*;
 import io.github.hielkemaps.racecommand.race.Race;
 import io.github.hielkemaps.racecommand.race.RaceManager;
 import io.github.hielkemaps.racecommand.wrapper.PlayerManager;
@@ -33,6 +31,22 @@ public class Commands {
                     Race race = RaceManager.getRace(p.getUniqueId());
                     if (race == null) return;
 
+                    race.start();
+                }).register();
+
+        //START COUNTDOWN
+        arguments = new LinkedHashMap<>();
+        arguments.put("start", new LiteralArgument("start").withRequirement(playerInRace.and(playerIsRaceOwner).and(raceHasStarted.negate().and(raceIsStarting.negate()))));
+        arguments.put("countdown", new IntegerArgument(3, 1000));
+        new CommandAPICommand("race")
+                .withArguments(arguments)
+                .executesPlayer((p, args) -> {
+                    int value = (int) args[0];
+
+                    Race race = RaceManager.getRace(p.getUniqueId());
+                    if (race == null) return;
+
+                    race.setCountDown(value);
                     race.start();
                 }).register();
 
@@ -257,26 +271,6 @@ public class Commands {
                     }).register();
         }
 
-        //Option countdown
-        arguments = new LinkedHashMap<>();
-        arguments.put("option", new LiteralArgument("option").withRequirement(playerInRace.and(playerIsRaceOwner)));
-        arguments.put("countdown", new LiteralArgument("countdown"));
-        arguments.put("seconds", new IntegerArgument(3, 1000));
-        new CommandAPICommand("race")
-                .withArguments(arguments)
-                .executesPlayer((p, args) -> {
-                    int value = (int) args[0];
-
-                    Race race = RaceManager.getRace(p.getUniqueId());
-                    if (race == null) return;
-
-                    if (race.setCountDown(value)) {
-                        p.sendMessage(Main.PREFIX + "Set countdown to " + value + " seconds");
-                    } else {
-                        p.sendMessage(Main.PREFIX + ChatColor.RED + "Nothing changed. Countdown was already " + value + " seconds");
-                    }
-                }).register();
-
         //Option pvp
         arguments = new LinkedHashMap<>();
         arguments.put("option", new LiteralArgument("option").withRequirement(playerInRace.and(playerIsRaceOwner)));
@@ -294,6 +288,31 @@ public class Commands {
                         }
                     }).register();
         }
+
+        //Option broadcast - OP ONLY
+        arguments = new LinkedHashMap<>();
+        arguments.put("option", new LiteralArgument("option").withRequirement(playerInRace.and(playerIsRaceOwner)));
+        arguments.put("broadcast", new LiteralArgument("broadcast").withPermission(CommandPermission.OP));
+        arguments.put("value", new BooleanArgument());
+        new CommandAPICommand("race")
+                .withArguments(arguments)
+                .executesPlayer((p, args) -> {
+                    boolean value = (boolean) args[0];
+
+                    Race race = RaceManager.getRace(p.getUniqueId());
+                    if (race == null) return;
+
+                    if (race.setBroadcast(value)) {
+                        if (value) {
+                            p.sendMessage(Main.PREFIX + "Enabled broadcasting");
+                        } else {
+                            p.sendMessage(Main.PREFIX + "Disabled broadcasting");
+                        }
+
+                    } else {
+                        p.sendMessage(Main.PREFIX + ChatColor.RED + "Nothing changed. Broadcast was already set to " + value);
+                    }
+                }).register();
     }
 
     Predicate<CommandSender> playerInRace = sender -> PlayerManager.getPlayer(((Player) sender).getUniqueId()).isInRace();
