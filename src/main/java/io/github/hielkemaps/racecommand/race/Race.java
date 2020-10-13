@@ -316,6 +316,10 @@ public class Race {
         return hasStarted;
     }
 
+    public boolean hasFinished(UUID player){
+        return finishedPlayers.contains(player);
+    }
+
     public void invitePlayer(UUID invited) {
         InvitedPlayers.add(invited);
         PlayerManager.getPlayer(invited).addInvite(owner);
