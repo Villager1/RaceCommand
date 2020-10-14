@@ -58,7 +58,7 @@ public class EventListener implements Listener {
                     if (playerRace.hasStarted()) {
 
                         //If both players are ingame
-                        if(!playerRace.hasFinished(player) && !playerRace.hasFinished(attacker)){
+                        if (!playerRace.hasFinished(player) && !playerRace.hasFinished(attacker)) {
                             e.setCancelled(false); //allow pvp
                             return;
                         }
