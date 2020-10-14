@@ -65,8 +65,8 @@ public class EventListener implements Listener {
                     }
                 }
             }
+            e.setCancelled(true); //disable pvp
         }
-        e.setCancelled(true); //disable pvp
     }
 
     @EventHandler
