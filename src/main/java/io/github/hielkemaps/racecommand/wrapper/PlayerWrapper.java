@@ -106,10 +106,10 @@ public class PlayerWrapper {
 
     public Team getTeam() {
         Player p = Bukkit.getPlayer(uuid);
-        if(p == null) return null;
+        if (p == null) return null;
 
         ScoreboardManager manager = Bukkit.getServer().getScoreboardManager();
-        if(manager == null) return null;
+        if (manager == null) return null;
 
         Scoreboard scoreboard = manager.getMainScoreboard();
 
@@ -117,6 +117,5 @@ public class PlayerWrapper {
             if (team.hasEntry(p.getName())) return team;
         }
         return null;
-
     }
 }
