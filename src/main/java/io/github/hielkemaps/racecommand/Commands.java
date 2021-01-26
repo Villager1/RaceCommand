@@ -66,16 +66,23 @@ public class Commands {
         //CREATE
         arguments = new ArrayList<>();
         arguments.add(new LiteralArgument("create").withRequirement(playerInRace.negate()));
+        arguments.add(new MultiLiteralArgument("normal", "pvp"));
         new CommandAPICommand("race")
                 .withArguments(arguments)
                 .executesPlayer((p, args) -> {
+                    String s = (String) args[0];
                     RaceManager.addRace(new Race(p.getUniqueId()));
-
-                    TextComponent msg = new TextComponent(Main.PREFIX + "Created race! Invite players with ");
-                    TextComponent click = new TextComponent(ChatColor.WHITE + "/race invite");
-                    click.setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/race invite "));
-                    msg.addExtra(click);
-
+                    if(Object.requireNonNull(RaceManager.getRace(p.getUniqueId()).setPvp(s.equals("pvp")) {
+                        TextComponent msg = new TextComponent(Main.PREFIX + "Created PvP race! Invite players with ");
+                        TextComponent click = new TextComponent(ChatColor.WHITE + "/race invite");
+                        click.setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/race invite "));
+                        msg.addExtra(click);
+                    } else {
+                        TextComponent msg = new TextComponent(Main.PREFIX + "Created Normal race! Invite players with ");
+                        TextComponent click = new TextComponent(ChatColor.WHITE + "/race invite");
+                        click.setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/race invite "));
+                        msg.addExtra(click);
+                    }
                     p.spigot().sendMessage(msg);
                 }).register();
 
