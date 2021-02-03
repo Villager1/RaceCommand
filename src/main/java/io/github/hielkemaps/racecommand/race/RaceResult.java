@@ -2,22 +2,24 @@ package io.github.hielkemaps.racecommand.race;
 
 import io.github.hielkemaps.racecommand.Util;
 import net.md_5.bungee.api.ChatColor;
-import org.bukkit.entity.Player;
+import org.bukkit.Bukkit;
+
+import java.util.UUID;
 
 public class RaceResult implements Comparable<RaceResult> {
 
     private final int place;
     private final int time;
-    private final Player player;
+    private final UUID uuid;
 
-    public RaceResult(Player player, int place, int time) {
+    public RaceResult(UUID uuid, int place, int time) {
         this.place = place;
         this.time = time;
-        this.player = player;
+        this.uuid = uuid;
     }
 
-    public Player getPlayer() {
-        return player;
+    public UUID getUUID() {
+        return uuid;
     }
 
     public int getTime() {
@@ -31,6 +33,9 @@ public class RaceResult implements Comparable<RaceResult> {
 
     @Override
     public String toString() {
+        String name = Bukkit.getOfflinePlayer(uuid).getName();
+        if (name == null) name = "unknown";
+
         StringBuilder s = new StringBuilder();
 
         if (place == 1) s.append(ChatColor.GOLD);
@@ -40,7 +45,7 @@ public class RaceResult implements Comparable<RaceResult> {
 
         s.append(ChatColor.BOLD);
 
-        s.append(Util.ordinal(place)).append(": ").append(ChatColor.RESET).append(player.getName()).append(ChatColor.DARK_GRAY).append(" - ").append(ChatColor.GRAY).append(Util.getTimeString(time));
+        s.append(Util.ordinal(place)).append(": ").append(ChatColor.RESET).append(name).append(ChatColor.DARK_GRAY).append(" - ").append(ChatColor.GRAY).append(Util.getTimeString(time));
         return s.toString();
     }
 

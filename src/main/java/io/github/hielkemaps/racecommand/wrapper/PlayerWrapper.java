@@ -4,6 +4,7 @@ import dev.jorel.commandapi.CommandAPI;
 import io.github.hielkemaps.racecommand.race.Race;
 import io.github.hielkemaps.racecommand.race.RaceManager;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
@@ -19,10 +20,6 @@ public class PlayerWrapper {
 
     public PlayerWrapper(UUID uuid) {
         this.uuid = uuid;
-    }
-
-    public Player getPlayer() {
-        return Bukkit.getPlayer(uuid);
     }
 
     public boolean isInRace() {
@@ -43,28 +40,23 @@ public class PlayerWrapper {
 
         //Add invites
         for (UUID uuid : raceInvites) {
-            Player p = Bukkit.getPlayer(uuid);
-            if (p != null) {
-
-                Race race = RaceManager.getRace(p.getUniqueId());
-                if (race != null && !race.hasStarted()) {
-                    joinable.add(p.getName());
-                }
+            Race race = RaceManager.getRace(uuid);
+            if (race != null && !race.hasStarted()) {
+                joinable.add(race.getName());
             }
         }
         //Add open races
         for (UUID uuid : RaceManager.publicRaces) {
-            Player owner = Bukkit.getPlayer(uuid);
-            if (owner != null) {
-                //Exclude when player is owner
-                if (!uuid.equals(this.uuid)) {
 
-                    Race race = RaceManager.getRace(owner.getUniqueId());
-                    if (race != null && !race.hasStarted()) {
-                        joinable.add(owner.getName());
-                    }
+            //Exclude when player is owner
+            if (!uuid.equals(this.uuid)) {
+
+                Race race = RaceManager.getRace(uuid);
+                if (race != null && !race.hasStarted()) {
+                    joinable.add(race.getName());
                 }
             }
+
         }
         return joinable.toArray(new String[0]);
     }
@@ -94,7 +86,7 @@ public class PlayerWrapper {
     }
 
     public void updateRequirements() {
-        Player player = getPlayer();
+        Player player = Bukkit.getPlayer(uuid);
         if (player == null) return;
 
         CommandAPI.updateRequirements(player);
