@@ -67,10 +67,27 @@ public class Commands {
         //CREATE
         arguments = new ArrayList<>();
         arguments.add(new LiteralArgument("create").withRequirement(playerInRace.negate()));
+        arguments.add(new MultiLiteralArguemnt("normal", "pvp", "manhunt"));
         new CommandAPICommand("race")
                 .withArguments(arguments)
                 .executesPlayer((p, args) -> {
+                    String mode = (String) args[0];
+                    boolean pvp = false;
                     RaceManager.addRace(new Race(p.getUniqueId(), p.getName()));
+                    switch(mode) {
+                        case "normal":
+                            pvp = false;
+                            break;
+                        case "pvp":
+                            pvp = true;
+                            break;
+                        case "manhunt":
+                            pvp = true;
+                            break;
+                        default:
+                            pvp = false;
+                    }
+                    RaceManager.getRace(p.getUniqueId()).setPvp(pvp);
 
                     TextComponent msg = new TextComponent(Main.PREFIX + "Created race! Invite players with ");
                     TextComponent click = new TextComponent(ChatColor.WHITE + "/race invite");
