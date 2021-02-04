@@ -1,5 +1,6 @@
 package io.github.hielkemaps.racecommand.race;
 
+import com.sun.tools.javac.jvm.Items;
 import dev.jorel.commandapi.CommandAPI;
 import io.github.hielkemaps.racecommand.Main;
 import io.github.hielkemaps.racecommand.Util;
@@ -7,6 +8,7 @@ import io.github.hielkemaps.racecommand.wrapper.PlayerManager;
 import io.github.hielkemaps.racecommand.wrapper.PlayerWrapper;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
@@ -21,16 +23,20 @@ public class Race {
     private final UUID owner;
     private final List<UUID> players = new ArrayList<>();
     private List<UUID> finishedPlayers = new ArrayList<>();
+    private List<UUID> huntedPlayers = new ArrayList<>();
     private boolean isPublic = false;
     private int countDown = 5;
     private boolean isStarting = false;
     private boolean hasStarted = false;
     private final Set<UUID> InvitedPlayers = new HashSet<>();
     private boolean pvp = false;
+    private String mode = "normal";
     private boolean broadcast = false;
     private boolean ghostPlayers = false;
     private int place = 1;
+    private int huntedPlace = 1;
     private List<RaceResult> results = new ArrayList<>();
+    private List<RaceResult> hunted = new ArrayList<>();
     private BukkitTask countDownTask;
     private BukkitTask countDownStopTask;
     private BukkitTask playingTask;
@@ -46,7 +52,9 @@ public class Race {
 
     public void start() {
         place = 1;
+        huntedPlace = 1;
         finishedPlayers = new ArrayList<>();
+        huntedPlayers = new ArrayList<>();
         results = new ArrayList<>();
         isStarting = true;
 
@@ -54,10 +62,34 @@ public class Race {
 
         sendMessage(Main.PREFIX + "Starting race...");
 
+        for(UUID uuid : players) {
+            Player player = Bukkit.getPlayer(uuid);
+            player.removeScoreboardTag("hunter");
+            player.removeScoreboardTag("runner");
+        }
+
+        //Set hunter for manhunt races
+        if(variantType() == "manhunt") {
+            int hunterRandomizer = (int) Math.random() * players.size();
+            int selectedPlayer = 0;
+            for (UUID uuid : players) {
+                Player player = Bukkit.getPlayer(uuid);
+                if (player != null) {
+                    if (selectedPlayer == hunterRandomizer) {
+                        player.addScoreboardTag("hunter");
+                    } else {
+                        player.addScoreboardTag("runner");
+                    }
+                    selectedPlayer++;
+                }
+            }
+        }
+
         //Tp players to start
         for (UUID uuid : players) {
             Player player = Bukkit.getPlayer(uuid);
             if (player != null) player.performCommand("restart");
+            if(player.getScoreboardTags().contains("hunter")) player.performCommand("reset");
         }
 
         //Countdown
@@ -112,9 +144,19 @@ public class Race {
         playingTask = Bukkit.getScheduler().runTaskTimer(Main.getInstance(), () -> {
 
             //stop race if everyone has finished
-            if (finishedPlayers.containsAll(players)) {
+            List<UUID> runners = new ArrayList<>();
+            for(UUID uuid : players) {
+                Player player = Bukkit.getPlayer(uuid);
+                if(!player.getScoreboardTags().contains("hunter")) runners.add(uuid);
+            }
+            if (finishedPlayers.containsAll(runners) || runners.size() <= 0) {
                 stop();
                 sendMessage(Main.PREFIX + "Race has ended");
+                for(UUID uuid : players) {
+                    Player player = Bukkit.getPlayer(uuid);
+                    player.removeScoreboardTag("hunter");
+                    player.removeScoreboardTag("runner");
+                }
             }
 
             for (UUID uuid : players) {
@@ -132,6 +174,26 @@ public class Race {
                     player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 50, 0, true, false, false));
                 }
 
+                if(player.getScoreboardTags().contains("hunter")) {
+                    player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 50, 0, true, false, true));
+
+                    //Set hunter's helmet
+                    ItemStack playerHelmet = new ItemStack(Material.ZOMBIE_HEAD);
+                    playerHelmet.getItemMeta().setDisplayName(ChatColor.RED + "Hunter\'s Mask");
+                    player.getInventory().setHelmet(playerHelmet);
+
+                    //Set hunter's axe
+                    ItemStack playerAxe = new ItemStack(Material.NETHERITE_AXE);
+                    playerAxe.getItemMeta().setDisplayName(ChatColor.RED + "Hunter\'s Axe");
+                    ArrayList<String> axeLore = new ArrayList<>();
+                    axeLore.add(ChatColor.YELLOW + "Hunter\'s Touch");
+                    playerAxe.getItemMeta().setLore(axeLore);
+                    player.getInventory().setItem(0, playerAxe);
+                }
+
+                if(player.getScoreboardTags().contains("hunter") && !huntedPlayers.contains(player) && !finishedPlayers.contains(player)) {
+                    hasFinished(player);
+                }
                 Team team = PlayerManager.getPlayer(uuid).getTeam();
                 if (team.getName().equals("finished")) {
                     hasFinished(player);
@@ -158,13 +220,23 @@ public class Race {
             }
         }
 
-        //Let players know
-        sendMessage(Main.PREFIX + ChatColor.GREEN + finished.getName() + " finished " + Util.ordinal(place) + " place!" + ChatColor.WHITE + " (" + Util.getTimeString(time) + ")");
+        if(finished.getScoreboardTags().contains("hunter")) {
+            //Let players know
+            sendMessage(Main.PREFIX + ChatColor.RED + finished.getName() + " has become a hunter!" + ChatColor.WHITE + " (" + Util.getTimeString(time) + ")");
 
-        finishedPlayers.add(finished.getUniqueId());
-        results.add(new RaceResult(finished.getUniqueId(), place, time));
+            huntedPlayers.add(finished.getUniqueId());
+            hunted.add(0, new RaceResult(finished.getUniqueId(), huntedPlace, time));
 
-        place++;
+            huntedPlace++;
+        } else {
+            //Let players know
+            sendMessage(Main.PREFIX + ChatColor.GREEN + finished.getName() + " finished " + Util.ordinal(place) + " place!" + ChatColor.WHITE + " (" + Util.getTimeString(time) + ")");
+
+            finishedPlayers.add(finished.getUniqueId());
+            results.add(new RaceResult(finished.getUniqueId(), place, time));
+
+            place++;
+        }
     }
 
     private void updateRequirements() {
@@ -316,6 +388,15 @@ public class Race {
         return true;
     }
 
+    public String variantType() { return mode; }
+
+    public boolean setVariantType(String value) {
+        if (value == mode) return false;
+
+        mode = value;
+        return true;
+    }
+
     public boolean isPvp() {
         return pvp;
     }
@@ -344,6 +425,10 @@ public class Race {
 
     public boolean hasFinished(UUID player) {
         return finishedPlayers.contains(player);
+    }
+
+    public boolean hasBeenHunted(UUID player) {
+        return huntedPlayers.contains(player);
     }
 
     public void invitePlayer(UUID invited) {
@@ -392,7 +477,14 @@ public class Race {
 
     public void printResults() {
         sendMessage(ChatColor.GOLD + "" + ChatColor.STRIKETHROUGH + "           " + ChatColor.RESET + "" + ChatColor.BOLD + " Results " + ChatColor.GOLD + "" + ChatColor.STRIKETHROUGH + "           ");
+        if(variantType() == "manhunt") {
+            sendMessage(ChatColor.GREEN + "" + ChatColor.UNDERLINE + "" + ChatColor.BOLD + "Finished");
+        }
         results.forEach(raceResult -> sendMessage(raceResult.toString()));
+        if(variantType() == "manhunt") {
+            sendMessage(ChatColor.RED + "" + ChatColor.UNDERLINE + "" + ChatColor.BOLD + "Hunted");
+            hunted.forEach(raceResult -> sendMessage(raceResult.toString()));
+        }
         sendMessage(ChatColor.GOLD + "" + ChatColor.STRIKETHROUGH + "                                    ");
     }
 

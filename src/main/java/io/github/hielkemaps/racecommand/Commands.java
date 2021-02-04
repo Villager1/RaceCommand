@@ -67,27 +67,10 @@ public class Commands {
         //CREATE
         arguments = new ArrayList<>();
         arguments.add(new LiteralArgument("create").withRequirement(playerInRace.negate()));
-        arguments.add(new MultiLiteralArguemnt("normal", "pvp", "manhunt"));
         new CommandAPICommand("race")
                 .withArguments(arguments)
                 .executesPlayer((p, args) -> {
-                    String mode = (String) args[0];
-                    boolean pvp = false;
                     RaceManager.addRace(new Race(p.getUniqueId(), p.getName()));
-                    switch(mode) {
-                        case "normal":
-                            pvp = false;
-                            break;
-                        case "pvp":
-                            pvp = true;
-                            break;
-                        case "manhunt":
-                            pvp = true;
-                            break;
-                        default:
-                            pvp = false;
-                    }
-                    RaceManager.getRace(p.getUniqueId()).setPvp(pvp);
 
                     TextComponent msg = new TextComponent(Main.PREFIX + "Created race! Invite players with ");
                     TextComponent click = new TextComponent(ChatColor.WHITE + "/race invite");
@@ -376,6 +359,21 @@ public class Commands {
                     }
                     Objects.requireNonNull(RaceManager.getRace(p.getUniqueId())).kickPlayer(toKick);
                 }).register();
+        //Option variant
+        arguments = new ArrayList<>();
+        arguments.add(new LiteralArgument("option").withRequirement(playerInRace.and(playerIsRaceOwner)));
+        arguments.add(new LiteralArgument("variant"));
+        arguments.add(new MultiLiteralArgument("normal", "pvp", "manhunt"));
+        new CommandAPICommand("race")
+                .withArguments(arguments)
+                .executesPlayer((p, args) -> {
+                    String mode = (String) args[0];
+                    Objects.requireNonNull(RaceManager.getRace(p.getUniqueId()).setVariantType(mode));
+                    Objects.requireNonNull(RaceManager.getRace(p.getUniqueId()).setPvp(mode.equals("pvp") || mode.equals("manhunt")));
+
+                    p.sendMessage(Main.PREFIX + "Set race variation to " + mode);
+                }).register();
+
 
         //Option visibility
         arguments = new ArrayList<>();

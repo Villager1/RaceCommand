@@ -82,8 +82,12 @@ public class EventListener implements Listener {
                     if (playerRace.hasStarted()) {
 
                         //If both players are ingame
-                        if (!playerRace.hasFinished(player) && !playerRace.hasFinished(attacker)) {
+                        if (!playerRace.hasFinished(player) && (!playerRace.hasFinished(attacker) || (playerRace.variantType().equals("manhunt") && (e.getDamager().getScoreboardTags().contains("hunter") && e.getEntity().getScoreboardTags().contains("runner"))))) {
                             e.setCancelled(false); //allow pvp
+                            if(playerRace.variantType().equals("manhunt")) {
+                                e.getEntity().removeScoreboardTag("runner");
+                                e.getEntity().addScoreboardTag("hunter");
+                            }
                             return;
                         }
                     }
